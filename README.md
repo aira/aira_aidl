@@ -20,9 +20,8 @@ Helpful references:
 - Permission allowlisting mechanism: https://source.android.com/docs/core/permissions/perms-allowlist
 
 Summary of what you need to do:
-- For development on a regular (non-rooted) device: You generally must have the app signed with the same key as the Aira app (not typically possible outside controlled partner programs).
+- For development on a regular device: You generally must have the app signed with the same key as the Aira app (not typically possible outside controlled partner programs).
 - For OEM / enterprise deployments: Install your app as a privileged system app and ensure the permission is allow‑listed so the platform grants it automatically.
-- For testing on an emulator / rooted device: You can push the APK into `/system/priv-app` (after remount) and reboot, then verify the permission is granted (`adb shell pm list permissions -g | grep aira` or `adb shell dumpsys package your.package.name`).
 
 Without meeting one of these two conditions, the following usage steps will not work because the service binding will be denied by the system.
 
