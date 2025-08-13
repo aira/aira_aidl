@@ -40,10 +40,12 @@ class MainActivity : ComponentActivity() {
     )
 
     private val mAiraService = mutableStateOf<AiraAidlInterface?>(null)
+    private val mErrorMessage = mutableStateOf<String?>(null)
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             Log.d(TAG, "Service connected")
             mAiraService.value = AiraAidlInterface.Stub.asInterface(service)
+            mErrorMessage.value = null // Clear any previous errors
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -68,6 +70,7 @@ class MainActivity : ComponentActivity() {
                 val cameraEnabled by remember { mCameraEnabled }
                 val inCall by remember { mIsInCall }
                 val loggedInUser by remember { mLoggedInUser }
+                val errorMessage by remember { mErrorMessage }
 
                 // Initial sync
                 LaunchedEffect(airaService) {
@@ -91,6 +94,7 @@ class MainActivity : ComponentActivity() {
                             cameraEnabled = cameraEnabled,
                             isInCall = inCall,
                             loggedInUser = loggedInUser,
+                            errorMessage = errorMessage,
                             onToggleMicrophone = { enabled ->
                                 lifecycleScope.launch {
                                     airaService?.setMicrophoneEnabled(enabled)
@@ -135,7 +139,15 @@ class MainActivity : ComponentActivity() {
     private fun bindService() {
         val intent = Intent(serviceName)
         intent.setPackage(targetPackage)
-        bindService(intent, serviceConnection, BIND_AUTO_CREATE)
+        try {
+            bindService(intent, serviceConnection, BIND_AUTO_CREATE)
+        } catch (e: SecurityException) {
+            Log.e(TAG, "SecurityException: ${e.message}")
+            mErrorMessage.value = "Failed to bind service: ${e.message}"
+        } catch (e: Exception) {
+            Log.e(TAG, "Exception: ${e.message}")
+            mErrorMessage.value = "An error occurred: ${e.message}"
+        }
     }
 
 
@@ -160,6 +172,7 @@ fun ServiceControlScreen(
     cameraEnabled: Boolean,
     isInCall: Boolean,
     loggedInUser: String?,
+    errorMessage: String?,
     onToggleMicrophone: (Boolean) -> Unit,
     onToggleCamera: (Boolean) -> Unit,
     onEndCall: () -> Unit,
@@ -168,6 +181,11 @@ fun ServiceControlScreen(
         modifier = modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        if (errorMessage != null) {
+            ErrorMessage(errorMessage)
+            return
+        }
+
         ServiceStatusCard(connected, isInCall, loggedInUser)
 
         if (!connected) {
@@ -343,6 +361,23 @@ private fun PackageInput(
                     }
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun ErrorMessage(message: String?) {
+    if (message != null) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+        ) {
+            Text(
+                text = message,
+                modifier = Modifier.padding(16.dp),
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
         }
     }
 }

@@ -5,6 +5,27 @@ This is a demo application that demonstrates how to control Aira Explorer app us
 | <img src="screenshots/Screenshot_1.png" width=250/> | <img src="screenshots/Screenshot_2.png" width=250 /> |
 |-------------------------------------|-----------------------------------|
 
+### Prerequisite: Permission Access
+
+The custom permission required to bind to the Aira AIDL service (`io.aira.aira_call.permission.BIND_AIDL_SERVICE`) is defined with a protection level that restricts access to either:
+
+1. Signature (your app must be signed with the **same signing key** as the Aira app), or
+2. Privileged (your app must be a **privileged system app** placed on the device image under `/system/priv-app` and allow‑listed for the permission).
+
+If your app is neither signed with the same certificate nor installed as a privileged system app, the bind attempt will fail with a `SecurityException` or the service connection will simply never succeed.
+
+Helpful references:
+- Android permission protection levels (Signature / SignatureOrSystem / Privileged): https://developer.android.com/guide/topics/manifest/permission-element#protectionLevel
+- Privileged apps & allowlisting: https://source.android.com/docs/core/permissions/privileged-apps
+- Permission allowlisting mechanism: https://source.android.com/docs/core/permissions/perms-allowlist
+
+Summary of what you need to do:
+- For development on a regular (non-rooted) device: You generally must have the app signed with the same key as the Aira app (not typically possible outside controlled partner programs).
+- For OEM / enterprise deployments: Install your app as a privileged system app and ensure the permission is allow‑listed so the platform grants it automatically.
+- For testing on an emulator / rooted device: You can push the APK into `/system/priv-app` (after remount) and reboot, then verify the permission is granted (`adb shell pm list permissions -g | grep aira` or `adb shell dumpsys package your.package.name`).
+
+Without meeting one of these two conditions, the following usage steps will not work because the service binding will be denied by the system.
+
 ### Usage in Android Applications
 
 To use Aira's AIDL interface in your Android application:
