@@ -1,6 +1,5 @@
 package io.aira.aira_call
 
-
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
@@ -15,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.aira.aira_call.ui.theme.AIDLClientTheme
 import androidx.compose.material.icons.Icons
@@ -77,49 +77,42 @@ class MainActivity : ComponentActivity() {
                     syncStates()
                 }
 
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Column(modifier = Modifier.padding(innerPadding)) {
-                        PackageInput(
-                            packageName = targetPackage,
-                            availablePackages = availablePackages,
-                            onPackageChange = {
-                                targetPackage = it
-                                unbindService()
-                                bindService()
-                            },
-                        )
-                        ServiceControlScreen(
-                            connected = airaService != null,
-                            microphoneEnabled = microphoneEnabled,
-                            cameraEnabled = cameraEnabled,
-                            isInCall = inCall,
-                            loggedInUser = loggedInUser,
-                            errorMessage = errorMessage,
-                            onToggleMicrophone = { enabled ->
-                                lifecycleScope.launch {
-                                    airaService?.setMicrophoneEnabled(enabled)
-                                    // Give some time for the request to take effect before syncing
-                                    delay(1000)
-                                    syncStates()
-                                }
-                            },
-                            onToggleCamera = { enabled ->
-                                lifecycleScope.launch {
-                                    airaService?.setCameraEnabled(enabled)
-                                    delay(1000)
-                                    syncStates()
-                                }
-                            },
-                            onEndCall = {
-                                lifecycleScope.launch {
-                                    airaService?.endCall()
-                                    delay(1000)
-                                    syncStates()
-                                }
-                            },
-                        )
-                    }
-                }
+                MainScreen(
+                    targetPackage = targetPackage,
+                    availablePackages = availablePackages,
+                    airaService = airaService,
+                    microphoneEnabled = microphoneEnabled,
+                    cameraEnabled = cameraEnabled,
+                    isInCall = inCall,
+                    loggedInUser = loggedInUser,
+                    errorMessage = errorMessage,
+                    onPackageChange = { newPackage ->
+                        targetPackage = newPackage
+                        unbindService()
+                        bindService()
+                    },
+                    onToggleMicrophone = { enabled ->
+                        lifecycleScope.launch {
+                            airaService?.setMicrophoneEnabled(enabled)
+                            delay(1000)
+                            syncStates()
+                        }
+                    },
+                    onToggleCamera = { enabled ->
+                        lifecycleScope.launch {
+                            airaService?.setCameraEnabled(enabled)
+                            delay(1000)
+                            syncStates()
+                        }
+                    },
+                    onEndCall = {
+                        lifecycleScope.launch {
+                            airaService?.endCall()
+                            delay(1000)
+                            syncStates()
+                        }
+                    },
+                )
             }
         }
     }
@@ -165,53 +158,63 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun ServiceControlScreen(
-    modifier: Modifier = Modifier,
-    connected: Boolean,
+fun MainScreen(
+    targetPackage: String,
+    availablePackages: List<String>,
+    airaService: AiraAidlInterface?,
     microphoneEnabled: Boolean,
     cameraEnabled: Boolean,
     isInCall: Boolean,
     loggedInUser: String?,
     errorMessage: String?,
+    onPackageChange: (String) -> Unit,
     onToggleMicrophone: (Boolean) -> Unit,
     onToggleCamera: (Boolean) -> Unit,
     onEndCall: () -> Unit,
 ) {
-    Column(
-        modifier = modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        if (errorMessage != null) {
-            ErrorMessage(errorMessage)
-            return
+    val connected = airaService != null
+    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            PackageInput(
+                packageName = targetPackage,
+                availablePackages = availablePackages,
+                onPackageChange = onPackageChange,
+            )
+
+            if (errorMessage != null) {
+                ErrorMessage(errorMessage)
+                return@Column
+            }
+
+            ServiceStatusCard(connected, isInCall, loggedInUser)
+
+            if (!connected) {
+                LoadingIndicator()
+                return@Column
+            }
+
+            if (isInCall) {
+                DeviceControls(
+                    micEnabled = microphoneEnabled,
+                    cameraEnabled = cameraEnabled,
+                    onMicToggle = onToggleMicrophone,
+                    onCameraToggle = onToggleCamera,
+                )
+                EndCallButton(onEndCall)
+            }
         }
-
-        ServiceStatusCard(connected, isInCall, loggedInUser)
-
-        if (!connected) {
-            LoadingIndicator()
-            return
-        }
-
-        if (!isInCall) {
-            return
-        }
-
-        DeviceControls(
-            micEnabled = microphoneEnabled,
-            cameraEnabled = cameraEnabled,
-            onMicToggle = onToggleMicrophone,
-            onCameraToggle = onToggleCamera,
-        )
-        EndCallButton(onEndCall)
     }
 }
 
 @Composable
 private fun ServiceStatusCard(isBound: Boolean, isInCall: Boolean, loggedInUser: String?) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
+        modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(
             containerColor = when {
                 !isBound -> MaterialTheme.colorScheme.errorContainer
                 loggedInUser == null -> MaterialTheme.colorScheme.tertiaryContainer
@@ -227,8 +230,7 @@ private fun ServiceStatusCard(isBound: Boolean, isInCall: Boolean, loggedInUser:
                     loggedInUser == null -> "Not Logged In"
                     isInCall -> "In Call"
                     else -> "Connected"
-                },
-                style = MaterialTheme.typography.titleMedium
+                }, style = MaterialTheme.typography.titleMedium
             )
             Text(
                 text = when {
@@ -236,8 +238,7 @@ private fun ServiceStatusCard(isBound: Boolean, isInCall: Boolean, loggedInUser:
                     loggedInUser == null -> "The target app doesn't have logged in user"
                     isInCall -> "Call in progress (User: ${loggedInUser})"
                     else -> "Ready (User: ${loggedInUser})"
-                },
-                style = MaterialTheme.typography.bodyMedium
+                }, style = MaterialTheme.typography.bodyMedium
             )
         }
     }
@@ -319,18 +320,14 @@ private fun LoadingIndicator() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PackageInput(
-    packageName: String,
-    availablePackages: List<String>,
-    onPackageChange: (String) -> Unit
+    packageName: String, availablePackages: List<String>, onPackageChange: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
 
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { expanded = it },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
+        modifier = Modifier.fillMaxWidth()
     ) {
         OutlinedTextField(
             value = packageName,
@@ -344,22 +341,16 @@ private fun PackageInput(
             singleLine = true
         )
         ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
+            expanded = expanded, onDismissRequest = { expanded = false }) {
             availablePackages.forEach { p ->
-                DropdownMenuItem(
-                    text = { Text(p) },
-                    trailingIcon = {
-                        if (p == packageName) {
-                            Icon(Icons.Filled.Check, contentDescription = null)
-                        }
-                    },
-                    onClick = {
-                        onPackageChange(p)
-                        expanded = false
+                DropdownMenuItem(text = { Text(p) }, trailingIcon = {
+                    if (p == packageName) {
+                        Icon(Icons.Filled.Check, contentDescription = null)
                     }
-                )
+                }, onClick = {
+                    onPackageChange(p)
+                    expanded = false
+                })
             }
         }
     }
@@ -369,8 +360,7 @@ private fun PackageInput(
 fun ErrorMessage(message: String?) {
     if (message != null) {
         Card(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
         ) {
             Text(
@@ -381,3 +371,40 @@ fun ErrorMessage(message: String?) {
         }
     }
 }
+
+@Preview(showBackground = true)
+@Composable
+fun MainScreenInCallPreview() {
+    AIDLClientTheme {
+        MainScreen(
+            targetPackage = "io.aira.aira_call_example",
+            availablePackages = listOf(
+                "io.aira.explorer",
+                "io.aira.explorer.dev",
+                "io.aira.asl",
+                "io.aira.aira_call_example"
+            ),
+            airaService = object : AiraAidlInterface {
+                override fun asBinder() = null
+                override fun isMicrophoneEnabled() = true
+                override fun isCameraEnabled() = false
+                override fun isInCall() = true
+                override fun getLoggedInUser() = "john.doe@example.com"
+                override fun setMicrophoneEnabled(enabled: Boolean) {}
+                override fun setCameraEnabled(enabled: Boolean) {}
+                override fun endCall() {}
+            },
+            microphoneEnabled = true,
+            cameraEnabled = false,
+            isInCall = true,
+            loggedInUser = "john.doe@example.com",
+            errorMessage = null,
+            onPackageChange = {},
+            onToggleMicrophone = {},
+            onToggleCamera = {},
+            onEndCall = {},
+        )
+    }
+}
+
+
