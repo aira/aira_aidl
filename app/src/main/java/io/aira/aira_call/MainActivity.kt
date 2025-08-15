@@ -157,6 +157,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     targetPackage: String,
@@ -173,7 +174,13 @@ fun MainScreen(
     onEndCall: () -> Unit,
 ) {
     val connected = airaService != null
-    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(modifier = Modifier.fillMaxSize(),
+        topBar = {
+            TopAppBar(
+                title = { Text("Aira AIDL Client") }
+            )
+        }
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
@@ -372,7 +379,7 @@ fun ErrorMessage(message: String?) {
     }
 }
 
-@Preview(showBackground = true)
+@Preview()
 @Composable
 fun MainScreenInCallPreview() {
     AIDLClientTheme {
