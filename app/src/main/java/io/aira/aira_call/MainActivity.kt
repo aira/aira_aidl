@@ -267,7 +267,9 @@ private fun ServiceStatusCard(
             )
             if (loggedInUser != null && !isInCall) {
                 Button(
-                    modifier = Modifier.align(Alignment.End),
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .padding(top = 16.dp),
                     onClick = onLogout,
                 ) {
                     Text(text = "Log Out")
