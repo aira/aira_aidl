@@ -2,8 +2,8 @@
 
 This is a demo application that demonstrates how to control Aira Explorer app using Android's AIDL (Android Interface Definition Language) interface. The app shows how to connect to Aira's service and control call features such as microphone, camera, and ending calls.
 
-| <img src="screenshots/Screenshot_1.png" width=250/> | <img src="screenshots/Screenshot_2.png" width=250 /> |
-|-------------------------------------|-----------------------------------|
+| <img src="screenshots/Screenshot_1.jpg" width=250/> | <img src="screenshots/Screenshot_2.jpg" width=250 /> |
+|-----------------------------------------------------|------------------------------------------------------|
 
 ### Prerequisite: Permission Access
 
