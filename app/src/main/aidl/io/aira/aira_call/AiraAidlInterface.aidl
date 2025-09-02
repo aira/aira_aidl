@@ -32,4 +32,9 @@ interface AiraAidlInterface {
     * Returns the logged in user email or phone. If not logged in, returns null
     */
     String getLoggedInUser();
+
+    /**
+    * Logs out the user
+    */
+    void logout();
 }

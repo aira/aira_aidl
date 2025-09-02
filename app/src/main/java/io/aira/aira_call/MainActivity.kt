@@ -112,6 +112,13 @@ class MainActivity : ComponentActivity() {
                             syncStates()
                         }
                     },
+                    onLogout = {
+                        lifecycleScope.launch {
+                            airaService?.logout()
+                            delay(1000)
+                            syncStates()
+                        }
+                    }
                 )
             }
         }
@@ -172,9 +179,11 @@ fun MainScreen(
     onToggleMicrophone: (Boolean) -> Unit,
     onToggleCamera: (Boolean) -> Unit,
     onEndCall: () -> Unit,
+    onLogout: () -> Unit,
 ) {
     val connected = airaService != null
-    Scaffold(modifier = Modifier.fillMaxSize(),
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
                 title = { Text("Aira AIDL Client") }
@@ -198,7 +207,7 @@ fun MainScreen(
                 return@Column
             }
 
-            ServiceStatusCard(connected, isInCall, loggedInUser)
+            ServiceStatusCard(connected, isInCall, loggedInUser, onLogout)
 
             if (!connected) {
                 LoadingIndicator()
@@ -219,7 +228,12 @@ fun MainScreen(
 }
 
 @Composable
-private fun ServiceStatusCard(isBound: Boolean, isInCall: Boolean, loggedInUser: String?) {
+private fun ServiceStatusCard(
+    isBound: Boolean,
+    isInCall: Boolean,
+    loggedInUser: String?,
+    onLogout: () -> Unit,
+) {
     Card(
         modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(
             containerColor = when {
@@ -230,7 +244,11 @@ private fun ServiceStatusCard(isBound: Boolean, isInCall: Boolean, loggedInUser:
             }
         )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+        ) {
             Text(
                 text = when {
                     !isBound -> "Disconnected"
@@ -247,6 +265,14 @@ private fun ServiceStatusCard(isBound: Boolean, isInCall: Boolean, loggedInUser:
                     else -> "Ready (User: ${loggedInUser})"
                 }, style = MaterialTheme.typography.bodyMedium
             )
+            if (loggedInUser != null && !isInCall) {
+                Button(
+                    modifier = Modifier.align(Alignment.End),
+                    onClick = onLogout,
+                ) {
+                    Text(text = "Log Out")
+                }
+            }
         }
     }
 }
@@ -397,6 +423,7 @@ fun MainScreenInCallPreview() {
                 override fun isCameraEnabled() = false
                 override fun isInCall() = true
                 override fun getLoggedInUser() = "john.doe@example.com"
+                override fun logout() {}
                 override fun setMicrophoneEnabled(enabled: Boolean) {}
                 override fun setCameraEnabled(enabled: Boolean) {}
                 override fun endCall() {}
@@ -410,6 +437,7 @@ fun MainScreenInCallPreview() {
             onToggleMicrophone = {},
             onToggleCamera = {},
             onEndCall = {},
+            onLogout = {},
         )
     }
 }

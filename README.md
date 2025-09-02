@@ -43,10 +43,18 @@ To use Aira's AIDL interface in your Android application:
     ```xml
     <uses-permission android:name="io.aira.aira_call.permission.BIND_AIDL_SERVICE" />
     ```
-   
-4. Build your app. The SDK tools will generate the IBinder interface file in your project's `gen/` directory.
 
-5. Bind to the service in your Android code:
+4. Add queries to your AndroidManifest.xml
+
+   ```xml
+   <queries>
+        <package android:name="io.aira.explorer" />
+   </queries>
+   ```
+   
+5. Build your app. The SDK tools will generate the IBinder interface file in your project's `gen/` directory.
+
+6. Bind to the service in your Android code:
 
     ```kotlin
     private var airaService: AiraAidlInterface? = null
@@ -70,7 +78,7 @@ To use Aira's AIDL interface in your Android application:
     
     ```
 
-6. Use the interface methods:
+7. Use the interface methods:
 
     ```kotlin
     // Check if in call
