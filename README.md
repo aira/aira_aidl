@@ -41,7 +41,7 @@ To use Aira's AIDL interface in your Android application:
 3. Add permission to your AndroidManifest.xml
 
     ```xml
-    <uses-permission android:name="io.aira.aira_call.permission.BIND_AIDL_SERVICE" />
+    <uses-permission android:name="io.aira.explorer.permission.BIND_AIDL_SERVICE" />
     ```
 
 4. Add queries to your AndroidManifest.xml
