@@ -2,7 +2,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="io.aira.aira_call.permission.BIND_AIDL_SERVICE" />
+    <uses-permission android:name="io.aira.aira_call_example.permission.BIND_AIDL_SERVICE" />
+    <uses-permission android:name="io.aira.explorer.permission.BIND_AIDL_SERVICE" />
+    <uses-permission android:name="io.aira.explorer.dev.permission.BIND_AIDL_SERVICE" />
+    <uses-permission android:name="io.aira.explorer.staging.permission.BIND_AIDL_SERVICE" />
+    <uses-permission android:name="io.aira.asl.permission.BIND_AIDL_SERVICE" />
+    <uses-permission android:name="io.aira.asl.dev.permission.BIND_AIDL_SERVICE" />
+    <uses-permission android:name="io.aira.asl.staging.permission.BIND_AIDL_SERVICE" />
 
     <queries>
         <package android:name="io.aira.aira_call_example" />
